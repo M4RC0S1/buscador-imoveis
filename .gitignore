@@ -1,0 +1,3 @@
+coletor.log
+*.tmp
+__pycache__/

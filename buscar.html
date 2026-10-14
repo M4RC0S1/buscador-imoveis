@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imóveis Daros - Busca</title>
+<!-- Lê imoveis.js (gerado junto com imoveis.json pelo coletor). Se não achar, tenta imoveis.json. -->
+<script src="imoveis.js"></script>
+<style>
+  :root{--bg:#f4f5f7;--card:#fff;--txt:#1f2937;--mut:#6b7280;--bd:#e5e7eb;--pri:#0f766e;--pri2:#115e59;
+        --novo:#16a34a;--alt:#d97706;--rem:#9ca3af;--wa:#25d366}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);padding-bottom:90px}
+  header{background:var(--pri);color:#fff;padding:14px 16px}
+  header h1{margin:0;font-size:1.15rem}
+  header small{opacity:.85}
+  main{max-width:1000px;margin:0 auto;padding:12px 16px}
+  .filtros{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;display:grid;gap:10px;
+           grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .filtros .busca{grid-column:1/-1}
+  label{font-size:.75rem;color:var(--mut);display:block;margin-bottom:3px}
+  input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:1rem;background:#fff;color:var(--txt)}
+  input:focus,select:focus{outline:2px solid var(--pri);border-color:transparent}
+  .barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:12px 0}
+  .barra .info{color:var(--mut);font-size:.9rem}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--bd);background:#fff;padding:8px 12px;color:var(--txt)}
+  button:hover{background:#f0f2f4}
+  button.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+  button.pri:hover{background:var(--pri2)}
+  button.wa{background:var(--wa);border-color:var(--wa);color:#063;font-weight:600}
+  .lista{display:grid;gap:10px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;display:flex;gap:12px}
+  .card.sel{outline:2px solid var(--pri)}
+  .card.removido{opacity:.55}
+  .chk{flex:none;padding-top:2px}
+  .chk input{width:22px;height:22px;padding:0}
+  .corpo{flex:1;min-width:0}
+  .topo{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+  .tag{font-size:.7rem;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:99px;color:#fff}
+  .tag.novo{background:var(--novo)} .tag.alt{background:var(--alt)} .tag.rem{background:var(--rem)}
+  .ref{font-size:.75rem;color:var(--mut)}
+  .titulo{font-weight:600;margin:2px 0}
+  .titulo a{color:inherit;text-decoration:none} .titulo a:hover{text-decoration:underline}
+  .end{color:var(--mut);font-size:.9rem}
+  .valor{font-size:1.25rem;font-weight:700;color:var(--pri2);margin:6px 0 2px}
+  .velho{font-size:.85rem;color:var(--alt);font-weight:600}
+  .velho s{color:var(--mut);font-weight:400}
+  .meta{font-size:.85rem;color:var(--mut);display:flex;gap:12px;flex-wrap:wrap}
+  .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .acoes button{padding:7px 10px;font-size:.85rem}
+  .vazio{text-align:center;color:var(--mut);padding:40px 10px}
+  .erro{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:12px}
+  .rodape{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--bd);padding:10px 16px;
+          display:none;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+  .rodape.on{display:flex}
+  #toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;
+         border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+  #toast.on{opacity:1}
+  @media(max-width:520px){.card{padding:10px}.acoes button{flex:1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Imóveis Daros</h1>
+  <small id="atualizado">Carregando…</small>
+</header>
+
+<main>
+  <section class="filtros">
+    <div class="busca">
+      <label for="q">Buscar por endereço, rua, bairro, título ou código</label>
+      <input id="q" type="search" placeholder="Ex.: zona 7, rua piratininga, casa jardim alvorada…" autocomplete="off">
+    </div>
+    <div><label for="vmin">Valor mínimo (R$)</label><input id="vmin" type="number" min="0" step="10000" inputmode="numeric" placeholder="0"></div>
+    <div><label for="vmax">Valor máximo (R$)</label><input id="vmax" type="number" min="0" step="10000" inputmode="numeric" placeholder="sem limite"></div>
+    <div><label for="tipo">Tipo</label><select id="tipo"><option value="">Todos</option></select></div>
+    <div><label for="cidade">Cidade</label><select id="cidade"><option value="">Todas</option></select></div>
+    <div><label for="quartos">Quartos</label>
+      <select id="quartos"><option value="">Qualquer</option><option value="1">1 ou mais</option><option value="2">2 ou mais</option>
+      <option value="3">3 ou mais</option><option value="4">4 ou mais</option></select></div>
+    <div><label for="status">Situação</label>
+      <select id="status"><option value="">Todos</option><option value="novo">Novos</option>
+      <option value="valor alterado">Valor alterado</option><option value="removido">Removidos</option></select></div>
+  </section>
+
+  <div class="barra">
+    <span class="info" id="contagem"></span>
+    <span>
+      <button id="selTodos">Selecionar todos os resultados</button>
+      <button id="limpar">Limpar filtros</button>
+    </span>
+  </div>
+
+  <div class="lista" id="lista"></div>
+</main>
+
+<div class="rodape" id="rodape">
+  <strong id="nSel"></strong>
+  <button class="wa" id="copiarSel">Copiar mensagem com todos</button>
+  <button id="copiarLinks">Copiar só os links</button>
+  <button id="desmarcar">Desmarcar</button>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let TODOS = [];
+  const selecionados = new Set();
+
+  // ---------- utilidades ----------
+  const norm = s => (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  const brl = v => v==null ? "Consulte" : "R$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const esc = s => (s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),1800);}
+
+  async function copiar(texto, aviso){
+    try{ await navigator.clipboard.writeText(texto); }
+    catch(e){ // fallback para arquivos abertos direto (file://) em alguns navegadores
+      const ta=document.createElement("textarea"); ta.value=texto; ta.style.position="fixed"; ta.style.opacity=0;
+      document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){} ta.remove();
+    }
+    toast(aviso||"Copiado!");
+  }
+
+  // ---------- mensagens ----------
+  // o título do site normalmente já termina com o bairro; só acrescenta se faltar
+  const linhaImovel = i => `${i.titulo}${i.bairro && !norm(i.titulo).includes(norm(i.bairro))?" - "+i.bairro:""} - ${brl(i.valor)}`;
+  const msgUm = i => `Olá! Separei este imóvel para você: ${linhaImovel(i)}. Veja aqui: ${i.link}`;
+  const msgVarios = lista => lista.length===1 ? msgUm(lista[0]) :
+    "Olá! Separei estes imóveis para você:\n\n" +
+    lista.map((i,n)=>`${n+1}) ${linhaImovel(i)}\n${i.link}`).join("\n\n");
+
+  // ---------- filtro ----------
+  function filtrados(){
+    const termos = norm($("q").value).split(/\s+/).filter(Boolean);
+    const vmin = parseFloat($("vmin").value), vmax = parseFloat($("vmax").value);
+    const tipo=$("tipo").value, cidade=$("cidade").value, q=parseInt($("quartos").value)||0, st=$("status").value;
+    return TODOS.filter(i=>{
+      if(st ? i.status!==st : i.status==="removido") return false;   // removidos só aparecem se pedidos
+      if(tipo && i.tipo!==tipo) return false;
+      if(cidade && i.cidade!==cidade) return false;
+      if(q && !(i.quartos>=q)) return false;
+      if(!isNaN(vmin) && !(i.valor>=vmin)) return false;
+      if(!isNaN(vmax) && !(i.valor<=vmax)) return false;
+      return termos.every(t=>i._busca.includes(t));
+    });
+  }
+
+  function render(){
+    const lista = filtrados();
+    $("contagem").textContent = lista.length + (lista.length===1?" imóvel encontrado":" imóveis encontrados");
+    if(!lista.length){ $("lista").innerHTML='<div class="vazio">Nenhum imóvel com esses filtros.</div>'; atualizarRodape(); return; }
+    $("lista").innerHTML = lista.map(i=>{
+      const tag = i.status==="novo" ? '<span class="tag novo">Novo</span>'
+                : i.status==="valor alterado" ? '<span class="tag alt">Valor alterado</span>'
+                : i.status==="removido" ? '<span class="tag rem">Removido</span>' : "";
+      const velho = (i.status==="valor alterado" && i.valor_antigo!=null)
+        ? `<div class="velho">${i.valor>i.valor_antigo?"▲":"▼"} antes <s>${brl(i.valor_antigo)}</s></div>` : "";
+      const meta = [i.quartos!=null?i.quartos+" quarto"+(i.quartos==1?"":"s"):"", i.vagas!=null?i.vagas+" vaga"+(i.vagas==1?"":"s"):"",
+                    i.area!=null?i.area.toLocaleString("pt-BR")+" m²":"", i.tipo].filter(Boolean).map(esc).join(" · ");
+      return `<article class="card ${selecionados.has(i.codigo)?"sel":""} ${i.status==="removido"?"removido":""}" data-c="${i.codigo}">
+        <div class="chk"><input type="checkbox" aria-label="Selecionar" ${selecionados.has(i.codigo)?"checked":""}></div>
+        <div class="corpo">
+          <div class="topo">${tag}<span class="ref">Ref. ${esc(i.codigo)}</span></div>
+          <div class="titulo"><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.titulo)}</a></div>
+          <div class="end">${esc(i.endereco)}</div>
+          <div class="valor">${brl(i.valor)}</div>${velho}
+          <div class="meta">${meta}</div>
+          <div class="acoes">
+            <button data-a="link">Copiar link</button>
+            <button class="wa" data-a="wa">Copiar mensagem WhatsApp</button>
+          </div>
+        </div></article>`;
+    }).join("");
+    atualizarRodape();
+  }
+
+  function atualizarRodape(){
+    const n=selecionados.size;
+    $("rodape").classList.toggle("on", n>0);
+    $("nSel").textContent = n+(n===1?" selecionado":" selecionados");
+  }
+  const porCodigo = c => TODOS.find(i=>i.codigo===c);
+
+  // ---------- eventos ----------
+  $("lista").addEventListener("click", e=>{
+    const card = e.target.closest(".card"); if(!card) return;
+    const im = porCodigo(card.dataset.c);
+    const a = e.target.dataset && e.target.dataset.a;
+    if(a==="link") copiar(im.link, "Link copiado!");
+    else if(a==="wa") copiar(msgUm(im), "Mensagem copiada!");
+  });
+  $("lista").addEventListener("change", e=>{
+    if(e.target.type!=="checkbox") return;
+    const card=e.target.closest(".card"), c=card.dataset.c;
+    e.target.checked ? selecionados.add(c) : selecionados.delete(c);
+    card.classList.toggle("sel", e.target.checked);
+    atualizarRodape();
+  });
+  ["q","vmin","vmax","tipo","cidade","quartos","status"].forEach(id=>$(id).addEventListener("input",render));
+  $("limpar").onclick = ()=>{ ["q","vmin","vmax","tipo","cidade","quartos","status"].forEach(id=>$(id).value=""); render(); };
+  $("selTodos").onclick = ()=>{ filtrados().forEach(i=>selecionados.add(i.codigo)); render(); };
+  $("desmarcar").onclick = ()=>{ selecionados.clear(); render(); };
+  const escolhidos = ()=>TODOS.filter(i=>selecionados.has(i.codigo));
+  $("copiarSel").onclick = ()=>copiar(msgVarios(escolhidos()), "Mensagem copiada!");
+  $("copiarLinks").onclick = ()=>copiar(escolhidos().map(i=>i.link).join("\n"), "Links copiados!");
+
+  // ---------- carga dos dados ----------
+  function iniciar(dados){
+    TODOS = (dados.imoveis||[]).map(i=>Object.assign(i,{
+      _busca: norm([i.titulo,i.endereco,i.bairro,i.cidade,i.codigo,i.tipo].join(" "))}));
+    const opcoes = (id,campo)=>{
+      [...new Set(TODOS.map(i=>i[campo]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))
+        .forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;$(id).appendChild(o);});
+    };
+    opcoes("tipo","tipo"); opcoes("cidade","cidade");
+    const n = TODOS.filter(i=>i.status!=="removido").length;
+    $("atualizado").textContent = `${n} imóveis · atualizado em ${dados.atualizado_em||"?"}`;
+    render();
+  }
+  function falha(){
+    $("atualizado").textContent = "Sem dados";
+    $("lista").innerHTML = '<div class="erro"><strong>Não encontrei a lista de imóveis.</strong><br>' +
+      'Rode primeiro o <b>atualizar.bat</b> (ou <b>atualizar.command</b>) para gerar o <b>imoveis.js</b> ' +
+      'e deixe este arquivo na mesma pasta que a página.</div>';
+  }
+  if(window.IMOVEIS_DATA) iniciar(window.IMOVEIS_DATA);
+  else fetch("imoveis.json").then(r=>r.json()).then(iniciar).catch(falha);
+})();
+</script>
+</body>
+</html>
