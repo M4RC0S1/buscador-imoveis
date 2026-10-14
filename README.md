@@ -48,6 +48,7 @@ As marcações "Novo" e "Valor alterado" ficam por **7 dias**, assim você não 
 
 Dê duplo clique em `buscar.html`. Ela abre no navegador, **sem internet e sem instalar nada** (os dados vêm do arquivo `imoveis.js` que fica na mesma pasta – por isso mantenha os arquivos juntos).
 
+- **Venda ou Locação:** os botões no topo (**Todos / Venda / Locação**) separam os imóveis, mostram quantos há em cada grupo e a página lembra a sua última escolha. Valores de locação aparecem como "R$ 600,00/mês" (inclusive na mensagem de WhatsApp). Os filtros de tipo e cidade se ajustam à aba escolhida.
 - **Busca:** digite rua, bairro, título ou código. Acentos e maiúsculas não importam ("maringa" acha "Maringá").
 - **Filtros:** valor mínimo/máximo, tipo, cidade, quartos e situação.
 - **Copiar link** e **Copiar mensagem WhatsApp** em cada imóvel. Depois é só colar no WhatsApp.
@@ -87,4 +88,4 @@ schtasks /Create /SC DAILY /ST 07:30 /TN "Atualizar imoveis Daros" /TR "\"C:\CAM
 
 ## Como funciona (para curiosos)
 
-O programa lê o `sitemap.xml` oficial do site (a lista de todas as páginas, que o próprio site publica para o Google) e visita a página de cada imóvel para extrair código, tipo, endereço, bairro, cidade, valor, quartos e área. Depois compara com a lista anterior para marcar novos, alterados e removidos. O site não oferece feed XML nem API pública; o sitemap é mais confiável que percorrer as páginas de listagem, que carregam a paginação por JavaScript.
+O programa lê os imóveis **à venda** pelo `sitemap.xml` oficial do site (a lista de páginas que o próprio site publica para o Google) e os imóveis **para locação** pela listagem paginada do site (`/imoveis/locacao`), pois a locação não consta no sitemap. Confere ainda se a quantidade lida bate com a que o site informa. Depois visita a página de cada imóvel para extrair código, tipo, endereço, bairro, cidade, valor, quartos e área. Depois compara com a lista anterior para marcar novos, alterados e removidos. O site não oferece feed XML nem API pública; o sitemap é mais confiável que percorrer as páginas de listagem, que carregam a paginação por JavaScript.

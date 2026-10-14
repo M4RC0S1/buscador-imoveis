@@ -101,6 +101,28 @@ def urls_do_sitemap():
     return sorted({u for u in urls if re.search(r"/imovel/\d+/", u)})
 
 
+def urls_da_listagem(caminho):
+    """Percorre a listagem paginada (?pagina=N) e devolve as URLs dos imóveis.
+    Usada para locação, que não consta no sitemap do site."""
+    achados, total_site = {}, None
+    for pagina in range(1, 100):
+        html = baixar(f"{SITE}{caminho}/?pagina={pagina}")
+        if total_site is None:
+            m = re.search(r"Exibindo\s+(\d+)", html)
+            total_site = int(m.group(1)) if m else None
+        novos = 0
+        for rel, codigo in re.findall(r'href="(/imovel/(\d+)/[^"]+)"', html):
+            if codigo not in achados:
+                achados[codigo] = SITE + rel
+                novos += 1
+        if novos == 0:   # o site repete a última página depois do fim
+            break
+        time.sleep(PAUSA)
+    if total_site is not None and len(achados) != total_site:
+        raise RuntimeError(f"listagem {caminho}: site informa {total_site} imóveis, li {len(achados)}")
+    return sorted(achados.values())
+
+
 def extrair_imovel(html, url):
     sopa = BeautifulSoup(html, "html.parser")
     codigo = re.search(r"/imovel/(\d+)/", url).group(1)
@@ -182,6 +204,7 @@ def extrair_imovel(html, url):
     og = sopa.find("meta", property="og:image")
     return {
         "codigo": codigo,
+        "negocio": "Locação" if re.search(r"alugar|locacao", url) else "Venda",
         "titulo": titulo,
         "tipo": tipo,
         "endereco": endereco,
@@ -265,14 +288,16 @@ def main():
     log(f"Iniciando coleta. Imóveis na lista anterior: {len(anterior)}")
 
     try:
-        urls = urls_do_sitemap()
+        venda = urls_do_sitemap()
+        locacao = urls_da_listagem("/imoveis/locacao")
     except Exception as e:
-        log(f"ERRO: não consegui ler o sitemap ({e}). Lista atual mantida.")
+        log(f"ERRO: não consegui montar a lista de imóveis ({e}). Lista atual mantida.")
         return 1
-    if not urls:
+    if not venda:
         log("ERRO: sitemap sem imóveis. Lista atual mantida.")
         return 1
-    log(f"Sitemap: {len(urls)} imóveis encontrados.")
+    urls = sorted(set(venda) | set(locacao), key=lambda u: re.search(r"/imovel/(\d+)/", u).group(1))
+    log(f"Encontrados: {len(venda)} à venda (sitemap) + {len(locacao)} para locação (listagem).")
 
     coletados, falhas, inexistentes = {}, [], []
     for n, url in enumerate(urls, 1):
