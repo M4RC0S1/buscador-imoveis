@@ -1,6 +1,14 @@
-# Imóveis Daros – ferramenta para enviar links a clientes
+# Buscador de Imóveis
 
-Duas partes, na mesma pasta:
+Ferramenta para enviar links de imóveis a clientes de forma rápida. Ela lê os imóveis do site da [Imobiliária Daros](https://imobiliariadaros.com.br/), guarda a lista (marcando o que é **novo**, o que teve **valor alterado** e o que foi **removido**) e oferece uma página de busca com botões para copiar o link ou uma mensagem pronta para WhatsApp.
+
+Feita para quem **não é programador**: basta instalar o Python uma vez e dar duplo clique.
+
+## 0. Baixar a ferramenta
+
+Nesta página do GitHub, clique no botão verde **Code → Download ZIP**, extraia o ZIP em uma pasta do seu computador (ex.: Área de Trabalho) e siga os passos abaixo. Mantenha todos os arquivos juntos na mesma pasta.
+
+## O que tem na pasta
 
 | Arquivo | Para que serve |
 |---|---|

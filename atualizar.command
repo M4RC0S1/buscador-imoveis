@@ -3,7 +3,7 @@
 cd "$(dirname "$0")" || exit 1
 
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "Python 3 não encontrado. Instale em https://www.python.org/downloads/ (passo 1 do LEIA-ME.md)."
+  echo "Python 3 não encontrado. Instale em https://www.python.org/downloads/ (passo 1 do README.md)."
   read -r -p "Pressione Enter para fechar..."
   exit 1
 fi

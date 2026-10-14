@@ -7,7 +7,7 @@ set PY=
 where py >nul 2>nul && set PY=py -3
 if "%PY%"=="" where python >nul 2>nul && set PY=python
 if "%PY%"=="" (
-  echo Python nao foi encontrado. Siga o passo 1 do LEIA-ME.md para instalar.
+  echo Python nao foi encontrado. Siga o passo 1 do README.md para instalar.
   pause
   exit /b 1
 )
