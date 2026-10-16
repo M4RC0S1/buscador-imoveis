@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clientes de Locação - Daros</title>
+<!-- Cadastro local de clientes (fica só neste navegador/computador) e aviso de imóveis de locação que combinam. -->
+<script src="imoveis.js"></script>
+<style>
+  :root{--bg:#f4f5f7;--card:#fff;--txt:#1f2937;--mut:#6b7280;--bd:#e5e7eb;--pri:#0f766e;--pri2:#115e59;--novo:#16a34a;--alt:#d97706;--wa:#25d366}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:var(--pri);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  header h1{margin:0;font-size:1.15rem} header small{opacity:.85} header a{color:#fff}
+  main{max-width:1000px;margin:0 auto;padding:12px 16px 40px}
+  .box{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+  .box h2{margin:0 0 10px;font-size:1rem}
+  .form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .form .l{grid-column:1/-1}
+  label{font-size:.75rem;color:var(--mut);display:block;margin-bottom:3px}
+  input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;font:inherit;background:#fff;color:var(--txt)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);border-color:transparent}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--bd);background:#fff;padding:8px 12px;color:var(--txt)}
+  button:hover{background:#f0f2f4}
+  button.pri{background:var(--pri);border-color:var(--pri);color:#fff} button.pri:hover{background:var(--pri2)}
+  button.wa{background:var(--wa);border-color:var(--wa);color:#063;font-weight:600}
+  button.peq{padding:5px 9px;font-size:.8rem}
+  .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .cli{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px}
+  .cli.tem{border-color:var(--novo);box-shadow:0 0 0 2px #dcfce7}
+  .cli h3{margin:0;font-size:1rem}
+  .cli .int{color:var(--mut);font-size:.85rem;margin:2px 0 6px}
+  .badge{display:inline-block;font-size:.7rem;font-weight:700;color:#fff;background:var(--novo);padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle}
+  .imo{border-top:1px dashed var(--bd);padding:7px 0;font-size:.88rem;display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+  .imo a{color:var(--txt)} .imo .v{font-weight:700;color:var(--pri2);white-space:nowrap}
+  .tag{font-size:.65rem;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:99px;color:#fff;margin-right:4px}
+  .tag.novo{background:var(--novo)} .tag.alt{background:var(--alt)}
+  .mut{color:var(--mut);font-size:.85rem}
+  .fundo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .fundo.on{display:flex}
+  .modal{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:85vh;overflow:auto;padding:16px}
+  .modal h2{margin:0 0 8px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:9px 16px;border-radius:99px;display:none;z-index:20}
+  .toast.on{display:block}
+  .erro{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:12px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Clientes de Locação</h1><small id="atu"></small></div>
+  <a href="buscar.html">← Buscar imóveis</a>
+</header>
+<main>
+  <div class="box" id="boxForm">
+    <h2 id="tForm">Novo cliente</h2>
+    <form id="form" class="form" autocomplete="off">
+      <div><label for="nome">Nome *</label><input id="nome" required></div>
+      <div><label for="tel">Telefone / WhatsApp</label><input id="tel" inputmode="tel" placeholder="(44) 99999-9999"></div>
+      <div><label for="tipo">Tipo de imóvel</label><select id="tipo"><option value="">Qualquer</option></select></div>
+      <div><label for="quartos">Quartos (mínimo)</label><input id="quartos" type="number" min="0" step="1" placeholder="Qualquer"></div>
+      <div><label for="vmin">Valor mínimo (R$)</label><input id="vmin" type="number" min="0" step="50"></div>
+      <div><label for="vmax">Valor máximo (R$)</label><input id="vmax" type="number" min="0" step="50"></div>
+      <div class="l"><label for="locais">Bairros ou cidades (separe por vírgula; vazio = qualquer)</label>
+        <input id="locais" placeholder="Ex.: Zona 03, Sarandi, Jardim Alvorada"></div>
+      <div class="l"><label for="obs">Observações</label><textarea id="obs" rows="2"></textarea></div>
+      <div class="l acoes" style="margin:0">
+        <button class="pri" type="submit" id="btnSalvar">Salvar cliente</button>
+        <button type="button" id="btnCancelar" style="display:none">Cancelar edição</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+      <h2 style="margin:0" id="tLista">Clientes</h2>
+      <div class="acoes" style="margin:0">
+        <button class="peq" id="btnExp">Exportar backup</button>
+        <button class="peq" id="btnImp">Importar backup</button>
+        <input type="file" id="arq" accept="application/json,.json" style="display:none">
+      </div>
+    </div>
+    <p class="mut">Os clientes ficam salvos só neste navegador e neste computador. Use <b>Exportar backup</b> de vez em quando: limpar os dados do navegador apaga a lista.</p>
+    <div id="lista"></div>
+  </div>
+</main>
+
+<div class="fundo" id="fundo"><div class="modal">
+  <h2>🔔 Imóveis que combinam com seus clientes</h2>
+  <div id="aviso"></div>
+  <div class="acoes"><button class="pri" id="btnOk">Ok, entendi</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const KEY = "clientes_locacao_v1";
+  const norm = s => (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+  const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const brl = v => v==null ? "Consulte" : "R$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const valorTxt = i => brl(i.valor) + (i.valor!=null ? "/mês" : "");
+  function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),1800);}
+
+  let IMOVEIS = [];      // locação ativos
+  let dados = {clientes:[], ultimaAtualizacao:""};
+  let editando = null;
+
+  function carregar(){
+    try{ const d=JSON.parse(localStorage.getItem(KEY)||"null"); if(d&&Array.isArray(d.clientes)) dados=d; }catch(e){}
+  }
+  function salvar(){
+    try{ localStorage.setItem(KEY, JSON.stringify(dados)); }
+    catch(e){ toast("Não consegui salvar neste navegador!"); }
+  }
+
+  // ---------- combinação ----------
+  function combina(c, i){
+    if(c.tipo && i.tipo!==c.tipo) return false;
+    if(c.quartos && !(i.quartos>=c.quartos)) return false;
+    if(i.valor!=null){
+      if(c.vmin!=null && i.valor<c.vmin) return false;
+      if(c.vmax!=null && i.valor>c.vmax) return false;
+    }
+    const locais=(c.locais||"").split(",").map(norm).filter(Boolean);
+    if(locais.length){
+      const alvo=norm(i.bairro)+"|"+norm(i.cidade);
+      if(!locais.some(l=>alvo.includes(l))) return false;
+    }
+    return true;
+  }
+  const chave = i => i.codigo+"@"+i.valor;   // se o valor mudar, avisa de novo
+  const ehNovidade = i => i.status==="novo" || i.status==="valor alterado";
+  const combinados = c => IMOVEIS.filter(i=>combina(c,i));
+
+  // ---------- mensagem ----------
+  const linha = i => `${i.titulo}${i.bairro && !norm(i.titulo).includes(norm(i.bairro))?" - "+i.bairro:""} - ${valorTxt(i)}`;
+  const msg = lista => lista.length===1 ? `Olá! Separei este imóvel para você: ${linha(lista[0])}. Veja aqui: ${lista[0].link}` :
+    "Olá! Separei estes imóveis para você:\n\n" + lista.map((i,n)=>`${n+1}) ${linha(i)}\n${i.link}`).join("\n\n");
+  async function copiar(t){
+    try{ await navigator.clipboard.writeText(t); }
+    catch(e){ const ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity=0;
+      document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){} ta.remove(); }
+    toast("Mensagem copiada!");
+  }
+
+  // ---------- tela ----------
+  function linhaImo(i){
+    const t = i.status==="novo" ? '<span class="tag novo">Novo</span>' : i.status==="valor alterado" ? '<span class="tag alt">Valor alterado</span>' : "";
+    return `<div class="imo"><div>${t}<a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.titulo)}</a>
+      <div class="mut">${esc(i.endereco||"")}${i.quartos?" · "+i.quartos+" q.":""}</div></div><div class="v">${esc(valorTxt(i))}</div></div>`;
+  }
+  function interesse(c){
+    const p=[];
+    if(c.tipo) p.push(c.tipo);
+    if(c.quartos) p.push(c.quartos+"+ quartos");
+    if(c.vmin!=null||c.vmax!=null) p.push((c.vmin!=null?brl(c.vmin):"…")+" a "+(c.vmax!=null?brl(c.vmax):"…"));
+    if(c.locais) p.push(c.locais);
+    return p.join(" · ") || "Sem requisitos (aceita qualquer imóvel)";
+  }
+
+  function desenhar(){
+    $("tLista").textContent = "Clientes ("+dados.clientes.length+")";
+    if(!dados.clientes.length){ $("lista").innerHTML='<p class="mut">Nenhum cliente cadastrado ainda.</p>'; return; }
+    $("lista").innerHTML = dados.clientes.map(c=>{
+      const m=combinados(c), nov=m.filter(ehNovidade);
+      return `<div class="cli ${nov.length?"tem":""}" data-id="${c.id}">
+        <h3>${esc(c.nome)}${c.tel?` <span class="mut">· ${esc(c.tel)}</span>`:""}${nov.length?`<span class="badge">${nov.length} novidade${nov.length>1?"s":""}</span>`:""}</h3>
+        <div class="int">${esc(interesse(c))}</div>
+        ${c.obs?`<div class="mut">📝 ${esc(c.obs)}</div>`:""}
+        <details ${nov.length?"open":""}><summary>${m.length} imóvel(is) combinando</summary>
+          ${m.length ? m.sort((a,b)=>ehNovidade(b)-ehNovidade(a)||(a.valor||0)-(b.valor||0)).map(linhaImo).join("") : '<p class="mut">Nenhum no momento.</p>'}
+        </details>
+        <div class="acoes">
+          ${m.length?`<button class="wa peq" data-a="wa">Copiar mensagem WhatsApp</button>`:""}
+          <button class="peq" data-a="ed">Editar</button>
+          <button class="peq" data-a="del">Excluir</button>
+        </div></div>`;
+    }).join("");
+  }
+
+  // ---------- aviso ao abrir ----------
+  function avisar(){
+    const blocos=[];
+    dados.clientes.forEach(c=>{
+      const vistos=new Set(c.vistos||[]);
+      const novos=combinados(c).filter(i=>ehNovidade(i)&&!vistos.has(chave(i)));
+      if(novos.length) blocos.push({c,novos});
+    });
+    if(!blocos.length) return;
+    $("aviso").innerHTML = blocos.map(b=>`<p><b>${esc(b.c.nome)}</b>${b.c.tel?" · "+esc(b.c.tel):""}</p>`+b.novos.map(linhaImo).join("")).join("<hr>");
+    $("fundo").classList.add("on");
+    $("btnOk").onclick=()=>{
+      blocos.forEach(b=>{ b.c.vistos=[...new Set([...(b.c.vistos||[]),...b.novos.map(chave)])]; });
+      salvar(); $("fundo").classList.remove("on"); desenhar();
+    };
+  }
+
+  // ---------- formulário ----------
+  const num = id => { const v=parseFloat($(id).value); return isNaN(v)?null:v; };
+  function limpar(){ editando=null; $("form").reset(); $("tForm").textContent="Novo cliente"; $("btnSalvar").textContent="Salvar cliente"; $("btnCancelar").style.display="none"; }
+  $("form").addEventListener("submit",e=>{
+    e.preventDefault();
+    const c = {nome:$("nome").value.trim(), tel:$("tel").value.trim(), tipo:$("tipo").value, quartos:num("quartos"),
+               vmin:num("vmin"), vmax:num("vmax"), locais:$("locais").value.trim(), obs:$("obs").value.trim()};
+    if(!c.nome) return;
+    if(c.vmin!=null && c.vmax!=null && c.vmin>c.vmax){ toast("Valor mínimo maior que o máximo"); return; }
+    if(editando){ const a=dados.clientes.find(x=>x.id===editando); Object.assign(a,c); a.vistos=[]; }   // requisitos mudaram: reavalia
+    else dados.clientes.push(Object.assign({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),vistos:[]},c));
+    // imóveis já existentes não são "novidade" para um cliente recém-cadastrado
+    const cli = editando ? dados.clientes.find(x=>x.id===editando) : dados.clientes[dados.clientes.length-1];
+    cli.vistos = combinados(cli).filter(ehNovidade).map(chave);
+    salvar(); limpar(); desenhar(); toast("Cliente salvo");
+  });
+  $("btnCancelar").onclick=limpar;
+
+  $("lista").addEventListener("click",e=>{
+    const b=e.target.closest("button[data-a]"); if(!b) return;
+    const c=dados.clientes.find(x=>x.id===b.closest(".cli").dataset.id); if(!c) return;
+    if(b.dataset.a==="wa") copiar(msg(combinados(c)));
+    if(b.dataset.a==="del" && confirm("Excluir "+c.nome+"?")){ dados.clientes=dados.clientes.filter(x=>x!==c); salvar(); desenhar(); }
+    if(b.dataset.a==="ed"){
+      editando=c.id; $("nome").value=c.nome; $("tel").value=c.tel||""; $("tipo").value=c.tipo||""; $("quartos").value=c.quartos??"";
+      $("vmin").value=c.vmin??""; $("vmax").value=c.vmax??""; $("locais").value=c.locais||""; $("obs").value=c.obs||"";
+      $("tForm").textContent="Editando: "+c.nome; $("btnSalvar").textContent="Salvar alterações"; $("btnCancelar").style.display="";
+      $("boxForm").scrollIntoView({behavior:"smooth"});
+    }
+  });
+
+  // ---------- backup ----------
+  $("btnExp").onclick=()=>{
+    const blob=new Blob([JSON.stringify(dados,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="clientes-backup-"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href);
+  };
+  $("btnImp").onclick=()=>$("arq").click();
+  $("arq").onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const d=JSON.parse(r.result); if(!d||!Array.isArray(d.clientes)) throw 0;
+        if(!confirm("Substituir os clientes atuais ("+dados.clientes.length+") pelos do backup ("+d.clientes.length+")?")) return;
+        dados=d; salvar(); desenhar(); toast("Backup importado");
+      }catch(_){ toast("Arquivo de backup inválido"); }
+    };
+    r.readAsText(f); e.target.value="";
+  };
+
+  // ---------- início ----------
+  function iniciar(d){
+    IMOVEIS=(d.imoveis||[]).filter(i=>norm(i.negocio)==="locacao"&&i.status!=="removido");
+    const a=d.atualizado_em||"";
+    $("atu").textContent = a ? "Imóveis atualizados em "+a.slice(8,10)+"/"+a.slice(5,7)+"/"+a.slice(0,4)+" · "+IMOVEIS.length+" para locação" : "";
+    [...new Set(IMOVEIS.map(i=>i.tipo).filter(Boolean))].sort((x,y)=>x.localeCompare(y,"pt-BR"))
+      .forEach(t=>{const o=document.createElement("option");o.value=o.textContent=t;$("tipo").appendChild(o)});
+    carregar(); desenhar(); avisar();
+  }
+  function falha(){ document.querySelector("main").innerHTML='<div class="erro">Não encontrei a lista de imóveis. Rode a atualização (atualizar.bat) e mantenha este arquivo na mesma pasta de imoveis.js.</div>'; }
+  if(window.IMOVEIS_DATA) iniciar(window.IMOVEIS_DATA);
+  else fetch("imoveis.json").then(r=>r.json()).then(iniciar).catch(falha);
+})();
+</script>
+</body>
+</html>

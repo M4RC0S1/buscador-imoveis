@@ -1,3 +1,4 @@
 coletor.log
 *.tmp
 __pycache__/
+clientes-backup*.json

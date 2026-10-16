@@ -14,6 +14,8 @@ Nesta página do GitHub, clique no botão verde **Code → Download ZIP**, extra
 |---|---|
 | `atualizar.bat` (Windows) / `atualizar.command` (Mac) | Dá duplo clique para buscar os imóveis do site e atualizar a lista |
 | `buscar.html` | A página de busca. Abre no navegador (Chrome, Edge, Safari…) |
+| `relatorio.html` | Gera a relação de imóveis **para locação ativos** pronta para imprimir ou salvar em PDF |
+| `clientes.html` | Cadastro local de clientes de locação (nome, telefone, interesses) e aviso de imóveis que combinam |
 | `imoveis.json` / `imoveis.js` | A lista de imóveis (gerada automaticamente – não edite) |
 | `coletor.py` | O programa que lê o site (você não precisa abrir) |
 | `coletor.log` | Histórico das atualizações (útil se algo der errado) |
@@ -55,6 +57,17 @@ Dê duplo clique em `buscar.html`. Ela abre no navegador, **sem internet e sem i
 - **Vários imóveis:** marque a caixinha de cada um (ou *Selecionar todos os resultados*). Aparece uma barra embaixo com **Copiar mensagem com todos**.
 
 No celular, copie a pasta para o aparelho ou use o computador para montar a mensagem e envie. (A página funciona em celular, mas as atualizações são feitas no computador.)
+
+## 3.1 Relatório em PDF (locação)
+
+Dê duplo clique em `relatorio.html`, ajuste (se quiser) tipo, cidade, ordenação e título, e clique em **Imprimir / Salvar PDF**. Na janela que abrir, escolha **Salvar como PDF** (ou envie direto à impressora). O relatório sai em A4 paisagem com código, tipo, endereço, bairro/cidade, composição, área e valor mensal. Para dados novos, rode antes o `atualizar.bat`.
+
+## 3.2 Clientes de locação e avisos
+
+Abra `clientes.html` e cadastre nome, telefone e interesses (tipo, quartos mínimos, faixa de valor, bairros/cidades). Depois de cada atualização, ao abrir a página aparece um aviso com os imóveis **novos** ou com **valor alterado** que combinam com cada cliente, e o botão **Copiar mensagem WhatsApp** monta a mensagem pronta.
+
+- Os clientes ficam salvos **só no navegador deste computador** (não vão para o GitHub). Use **Exportar backup** de vez em quando; limpar os dados do navegador apaga a lista. Use sempre o mesmo navegador.
+- Imóveis que já existiam quando o cliente foi cadastrado não geram aviso; só os que aparecerem depois.
 
 ## 4. Atualizar automaticamente todo dia de manhã
 

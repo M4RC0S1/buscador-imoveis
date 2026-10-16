@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relação de Imóveis para Locação - Daros</title>
+<!-- Lê imoveis.js (gerado pelo coletor). Se não achar, tenta imoveis.json. Mostra só LOCAÇÃO ativos (sem removidos). -->
+<script src="imoveis.js"></script>
+<style>
+  :root{--txt:#111827;--mut:#6b7280;--bd:#d1d5db;--pri:#0f766e;--pri2:#115e59}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--txt);background:#f4f5f7}
+  .painel{background:#fff;border-bottom:1px solid var(--bd);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .painel div{min-width:150px}
+  .painel label{display:block;font-size:.75rem;color:var(--mut);margin-bottom:3px}
+  .painel input,.painel select{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;font:inherit}
+  .painel button{font:inherit;cursor:pointer;padding:10px 18px;border-radius:8px;border:1px solid var(--pri);background:var(--pri);color:#fff;font-weight:600}
+  .painel button:hover{background:var(--pri2)}
+  .painel .dica{flex:1 1 100%;font-size:.8rem;color:var(--mut)}
+  .folha{max-width:1100px;margin:16px auto;background:#fff;padding:20px 24px;box-shadow:0 1px 6px rgba(0,0,0,.12)}
+  h1{margin:0;font-size:1.3rem;color:var(--pri2)}
+  .sub{color:var(--mut);font-size:.85rem;margin:2px 0 14px}
+  table{width:100%;border-collapse:collapse;font-size:.8rem}
+  th{background:var(--pri);color:#fff;text-align:left;padding:6px 7px;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em}
+  td{padding:6px 7px;border-bottom:1px solid var(--bd);vertical-align:top}
+  thead{display:table-header-group}
+  tr{break-inside:avoid;page-break-inside:avoid}
+  tbody tr:nth-child(even) td{background:#f3f4f6}
+  td.cod{white-space:nowrap;color:var(--mut)}
+  td.val{white-space:nowrap;font-weight:700;text-align:right}
+  th.val{text-align:right}
+  .bairro{color:var(--mut)}
+  .vazio,.erro{padding:30px;text-align:center;color:var(--mut)}
+  .erro{color:#991b1b}
+  @page{size:A4 landscape;margin:12mm}
+  @media print{
+    body{background:#fff}
+    .painel{display:none}
+    .folha{max-width:none;margin:0;padding:0;box-shadow:none}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="painel">
+  <div><label for="fTipo">Tipo</label><select id="fTipo"><option value="">Todos</option></select></div>
+  <div><label for="fCidade">Cidade</label><select id="fCidade"><option value="">Todas</option></select></div>
+  <div><label for="fOrdem">Ordenar por</label>
+    <select id="fOrdem"><option value="cidade">Cidade / bairro</option><option value="tipo">Tipo</option>
+      <option value="valor">Menor valor</option><option value="valorDesc">Maior valor</option></select></div>
+  <div style="flex:1 1 220px"><label for="fTitulo">Título do relatório</label><input id="fTitulo" value="Relação de Imóveis para Locação"></div>
+  <button id="btnImprimir">Imprimir / Salvar PDF</button>
+  <div class="dica">Na janela de impressão, escolha <b>Salvar como PDF</b> (ou sua impressora). O relatório sai em A4 paisagem.</div>
+</div>
+
+<div class="folha" id="folha"><div class="vazio">Carregando…</div></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  const brl = v => v==null ? "—" : v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const num = n => n.toLocaleString("pt-BR");
+  const ehLocacao = i => norm(i.negocio)==="locacao";
+
+  let ALVO=[], atualizado="";
+
+  function composicao(i){
+    const p=[];
+    const pl=(n,s,pl_)=>n+" "+(n===1?s:pl_);
+    if(i.quartos) p.push(pl(i.quartos,"quarto","quartos"));
+    if(i.suites) p.push(pl(i.suites,"suíte","suítes"));
+    if(i.banheiros) p.push(pl(i.banheiros,"banheiro","banheiros"));
+    if(i.vagas) p.push(pl(i.vagas,"vaga","vagas"));
+    return p.join(" · ") || "—";
+  }
+  // O endereço do site termina com ", Bairro, Cidade - UF"; esses dados já têm coluna própria.
+  function rua(i){
+    let e=i.endereco||"";
+    const fim=[i.bairro,(i.cidade||"")+(i.uf?" - "+i.uf:"")].filter(Boolean).map(x=>", "+x).join("");
+    return fim && e.endsWith(fim) ? e.slice(0,-fim.length) : e;
+  }
+  const area = i =>i.area!=null ? num(i.area)+" m²" : "—";
+
+  function preencher(sel, valores){
+    const atual=sel.value;
+    [...new Set(valores.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))
+      .forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;sel.appendChild(o)});
+    sel.value=atual;
+  }
+
+  function ordenar(lista, modo){
+    const cmp=(a,b)=>String(a||"").localeCompare(String(b||""),"pt-BR");
+    const f={
+      cidade:(a,b)=>cmp(a.cidade,b.cidade)||cmp(a.bairro,b.bairro)||cmp(a.tipo,b.tipo),
+      tipo:(a,b)=>cmp(a.tipo,b.tipo)||cmp(a.cidade,b.cidade)||cmp(a.bairro,b.bairro),
+      valor:(a,b)=>(a.valor??Infinity)-(b.valor??Infinity),
+      valorDesc:(a,b)=>(b.valor??-Infinity)-(a.valor??-Infinity)
+    }[modo];
+    return lista.slice().sort(f);
+  }
+
+  function desenhar(){
+    const tipo=$("fTipo").value, cidade=$("fCidade").value;
+    const lista=ordenar(ALVO.filter(i=>(!tipo||i.tipo===tipo)&&(!cidade||i.cidade===cidade)), $("fOrdem").value);
+    document.title=$("fTitulo").value||"Relação de Imóveis";
+    if(!lista.length){ $("folha").innerHTML='<div class="vazio">Nenhum imóvel de locação encontrado com esses filtros.</div>'; return; }
+    const linhas=lista.map(i=>`<tr>
+      <td class="cod">${esc(i.codigo)}</td>
+      <td>${esc(i.tipo)}</td>
+      <td>${esc(rua(i))}</td>
+      <td>${esc(i.bairro||"—")}<div class="bairro">${esc(i.cidade||"")}${i.uf?" - "+esc(i.uf):""}</div></td>
+      <td>${esc(composicao(i))}</td>
+      <td>${esc(area(i))}</td>
+      <td class="val">${esc(brl(i.valor))}<small style="font-weight:400;color:#6b7280">/mês</small></td></tr>`).join("");
+    $("folha").innerHTML=`<h1>${esc($("fTitulo").value)}</h1>
+      <div class="sub">${lista.length} ${lista.length===1?"imóvel":"imóveis"} ativos · dados atualizados em ${esc(atualizado)} · Imobiliária Daros</div>
+      <table><thead><tr><th>Cód.</th><th>Tipo</th><th>Endereço</th><th>Bairro / Cidade</th><th>Composição</th><th>Área</th><th class="val">Valor</th></tr></thead>
+      <tbody>${linhas}</tbody></table>`;
+  }
+
+  function iniciar(d){
+    ALVO=(d.imoveis||[]).filter(i=>ehLocacao(i)&&i.status!=="removido");
+    const a=d.atualizado_em||"";
+    atualizado=a ? a.slice(8,10)+"/"+a.slice(5,7)+"/"+a.slice(0,4) : "—";
+    preencher($("fTipo"),ALVO.map(i=>i.tipo));
+    preencher($("fCidade"),ALVO.map(i=>i.cidade));
+    ["fTipo","fCidade","fOrdem"].forEach(id=>$(id).addEventListener("change",desenhar));
+    $("fTitulo").addEventListener("input",desenhar);
+    $("btnImprimir").addEventListener("click",()=>window.print());
+    desenhar();
+  }
+  function falha(){ $("folha").innerHTML='<div class="erro">Não encontrei a lista de imóveis. Rode a atualização (atualizar.bat) e mantenha este arquivo na mesma pasta de imoveis.js.</div>'; }
+
+  if(window.IMOVEIS_DATA) iniciar(window.IMOVEIS_DATA);
+  else fetch("imoveis.json").then(r=>r.json()).then(iniciar).catch(falha);
+})();
+</script>
+</body>
+</html>
