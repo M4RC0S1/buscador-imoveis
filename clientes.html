@@ -43,12 +43,14 @@
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:9px 16px;border-radius:99px;display:none;z-index:20}
   .toast.on{display:block}
   .erro{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:12px}
+  .emb .nav{display:none}
 </style>
+<script>if(self!==top)document.documentElement.className="emb"</script>
 </head>
 <body>
 <header>
   <div><h1>Clientes de Locação</h1><small id="atu"></small></div>
-  <a href="buscar.html">← Buscar imóveis</a>
+  <div class="nav"><a href="buscar.html">← Buscar imóveis</a> <a href="documentos.html" style="margin-left:12px">Documentações</a></div>
 </header>
 <main>
   <div class="box" id="boxForm">

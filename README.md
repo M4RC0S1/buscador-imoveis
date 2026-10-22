@@ -13,9 +13,11 @@ Nesta página do GitHub, clique no botão verde **Code → Download ZIP**, extra
 | Arquivo | Para que serve |
 |---|---|
 | `atualizar.bat` (Windows) / `atualizar.command` (Mac) | Dá duplo clique para buscar os imóveis do site e atualizar a lista |
+| `index.html` | **Painel único**: abre Buscar, Clientes, Documentações e Relatório em abas, numa só guia do navegador (comece por aqui) |
 | `buscar.html` | A página de busca. Abre no navegador (Chrome, Edge, Safari…) |
 | `relatorio.html` | Gera a relação de imóveis **para locação ativos** pronta para imprimir ou salvar em PDF |
 | `clientes.html` | Cadastro local de clientes de locação (nome, telefone, interesses) e aviso de imóveis que combinam |
+| `documentos.html` | Cadastro local de documentações ativas de clientes, vinculadas a um imóvel (link ou código), com busca por nome, telefone ou imóvel |
 | `imoveis.json` / `imoveis.js` | A lista de imóveis (gerada automaticamente – não edite) |
 | `coletor.py` | O programa que lê o site (você não precisa abrir) |
 | `coletor.log` | Histórico das atualizações (útil se algo der errado) |

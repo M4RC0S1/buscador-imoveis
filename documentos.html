@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentações de Clientes - Daros</title>
+<!-- Cadastro local de documentações ativas de clientes, vinculadas a um imóvel (fica só neste navegador/computador). -->
+<script src="imoveis.js"></script>
+<style>
+  :root{--bg:#f4f5f7;--card:#fff;--txt:#1f2937;--mut:#6b7280;--bd:#e5e7eb;--pri:#0f766e;--pri2:#115e59;--ok:#16a34a;--alt:#d97706;--ruim:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:var(--pri);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  header h1{margin:0;font-size:1.15rem} header small{opacity:.85} header a{color:#fff;margin-left:12px}
+  main{max-width:1000px;margin:0 auto;padding:12px 16px 40px}
+  .box{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+  .box h2{margin:0 0 10px;font-size:1rem}
+  .form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .form .l{grid-column:1/-1}
+  label{font-size:.75rem;color:var(--mut);display:block;margin-bottom:3px}
+  input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;font:inherit;background:#fff;color:var(--txt)}
+  input[type=checkbox]{width:auto;padding:0}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);border-color:transparent}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--bd);background:#fff;padding:8px 12px;color:var(--txt)}
+  button:hover{background:#f0f2f4}
+  button.pri{background:var(--pri);border-color:var(--pri);color:#fff} button.pri:hover{background:var(--pri2)}
+  button.peq{padding:5px 9px;font-size:.8rem}
+  .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .docs{display:flex;flex-wrap:wrap;gap:6px 14px}
+  .docs label{display:flex;align-items:center;gap:5px;font-size:.85rem;color:var(--txt);margin:0}
+  .prev{font-size:.85rem;margin-top:4px;color:var(--mut)} .prev.ok{color:var(--pri2)}
+  .doc{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px}
+  .doc.venc{border-color:var(--ruim)} .doc.perto{border-color:var(--alt)}
+  .doc h3{margin:0;font-size:1rem}
+  .doc .imo{font-size:.88rem;margin:4px 0}
+  .doc .imo a{color:var(--pri2)}
+  .tag{font-size:.65rem;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:99px;color:#fff;margin-left:6px;vertical-align:middle;background:var(--mut)}
+  .tag.ativa{background:var(--ok)} .tag.analise{background:var(--alt)} .tag.reprovada,.tag.venc{background:var(--ruim)} .tag.perto{background:var(--alt)}
+  .chip{display:inline-block;font-size:.75rem;background:#ecfdf5;color:var(--pri2);border:1px solid #a7f3d0;border-radius:99px;padding:1px 8px;margin:2px 3px 0 0}
+  .mut{color:var(--mut);font-size:.85rem}
+  .filtros{display:grid;gap:8px;grid-template-columns:2fr 1fr}
+  @media(max-width:560px){.filtros{grid-template-columns:1fr}}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:9px 16px;border-radius:99px;display:none;z-index:20}
+  .toast.on{display:block}
+  .emb .nav{display:none}
+</style>
+<script>if(self!==top)document.documentElement.className="emb"</script>
+</head>
+<body>
+<header>
+  <div><h1>Documentações de Clientes</h1><small id="atu"></small></div>
+  <div class="nav"><a href="buscar.html">← Buscar imóveis</a><a href="clientes.html">Clientes</a></div>
+</header>
+<main>
+  <div class="box" id="boxForm">
+    <h2 id="tForm">Nova documentação</h2>
+    <form id="form" class="form" autocomplete="off">
+      <div><label for="nome">Nome do cliente *</label><input id="nome" required></div>
+      <div><label for="tel">Telefone / WhatsApp *</label><input id="tel" inputmode="tel" placeholder="(44) 99999-9999" required></div>
+      <div class="l"><label for="imovel">Imóvel: cole o link ou digite o código</label>
+        <input id="imovel" placeholder="https://imobiliariadaros.com.br/imovel/... ou 94620000002">
+        <div class="prev" id="prev"></div></div>
+      <div><label for="sit">Situação</label>
+        <select id="sit">
+          <option value="analise">Em análise</option><option value="ativa">Ativa</option>
+          <option value="reprovada">Reprovada</option><option value="encerrada">Encerrada</option>
+        </select></div>
+      <div><label for="recebido">Recebida em</label><input id="recebido" type="date"></div>
+      <div><label for="validade">Válida até</label><input id="validade" type="date"></div>
+      <div class="l"><label>Documentos recebidos</label><div class="docs" id="docs"></div></div>
+      <div class="l"><label for="local">Onde está guardada (pasta, e-mail, caminho…)</label><input id="local" placeholder="Ex.: Pasta Documentos\Clientes\Maria ou e-mail de 20/10"></div>
+      <div class="l"><label for="obs">Observações</label><textarea id="obs" rows="2"></textarea></div>
+      <div class="l acoes" style="margin:0">
+        <button class="pri" type="submit" id="btnSalvar">Salvar documentação</button>
+        <button type="button" id="btnCancelar" style="display:none">Cancelar edição</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+      <h2 style="margin:0" id="tLista">Documentações</h2>
+      <div class="acoes" style="margin:0">
+        <button class="peq" id="btnExp">Exportar backup</button>
+        <button class="peq" id="btnImp">Importar backup</button>
+        <input type="file" id="arq" accept="application/json,.json" style="display:none">
+      </div>
+    </div>
+    <div class="filtros" style="margin:10px 0">
+      <input id="busca" type="search" placeholder="Buscar por nome, telefone, código, link ou endereço do imóvel">
+      <select id="fsit">
+        <option value="abertas">Em aberto (análise + ativas)</option><option value="">Todas</option>
+        <option value="ativa">Ativas</option><option value="analise">Em análise</option>
+        <option value="reprovada">Reprovadas</option><option value="encerrada">Encerradas</option>
+      </select>
+    </div>
+    <p class="mut">Os registros ficam salvos só neste navegador e neste computador. Use <b>Exportar backup</b> de vez em quando: limpar os dados do navegador apaga a lista.</p>
+    <div id="lista"></div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const KEY = "documentacoes_v1";
+  const TIPOS_DOC = ["RG / CNH","CPF","Comprovante de renda","Comprovante de residência","Certidão de estado civil","Contrato social","Documentos do fiador","Ficha cadastral","Outros"];
+  const SITUACOES = {analise:"Em análise", ativa:"Ativa", reprovada:"Reprovada", encerrada:"Encerrada"};
+  const norm = s => (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+  const digitos = s => (s||"").replace(/\D/g,"");
+  const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const dataBR = d => d ? d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4) : "";
+  const hoje = () => new Date().toISOString().slice(0,10);
+  function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),1800);}
+
+  let IMOVEIS = [];
+  let dados = {documentos:[]};
+  let editando = null;
+
+  function carregar(){
+    try{ const d=JSON.parse(localStorage.getItem(KEY)||"null"); if(d&&Array.isArray(d.documentos)) dados=d; }catch(e){}
+  }
+  function salvar(){
+    try{ localStorage.setItem(KEY, JSON.stringify(dados)); }
+    catch(e){ toast("Não consegui salvar neste navegador!"); }
+  }
+
+  // ---------- vínculo com o imóvel ----------
+  // aceita link do site, código puro ou qualquer texto (referência livre)
+  function codigoDe(txt){
+    const t=(txt||"").trim();
+    const m=t.match(/\/imovel\/(\d+)/);
+    if(m) return m[1];
+    return /^\d{5,}$/.test(t) ? t : "";
+  }
+  const acharImovel = ref => { const c=codigoDe(ref); return c ? IMOVEIS.find(i=>i.codigo===c) : null; };
+
+  function previa(){
+    const ref=$("imovel").value.trim(), p=$("prev");
+    if(!ref){ p.textContent=""; p.className="prev"; return; }
+    const i=acharImovel(ref);
+    if(i){ p.textContent="✓ "+i.titulo+" — "+(i.endereco||""); p.className="prev ok"; }
+    else { p.textContent="Imóvel não encontrado na lista atual; será salvo como referência."; p.className="prev"; }
+  }
+
+  // ---------- situação do prazo ----------
+  function prazo(d){
+    if(!d.validade || d.situacao==="encerrada" || d.situacao==="reprovada") return "";
+    const dias=Math.round((new Date(d.validade+"T00:00:00")-new Date(hoje()+"T00:00:00"))/864e5);
+    return dias<0 ? "venc" : dias<=7 ? "perto" : "";
+  }
+
+  // ---------- tela ----------
+  function visiveis(){
+    const q=norm($("busca").value), qd=digitos($("busca").value), f=$("fsit").value;
+    return dados.documentos.filter(d=>{
+      if(f==="abertas" ? !(d.situacao==="ativa"||d.situacao==="analise") : f && d.situacao!==f) return false;
+      if(!q) return true;
+      const i=acharImovel(d.imovel);
+      const txt=norm([d.nome,d.imovel,d.local,d.obs,i&&i.titulo,i&&i.endereco,i&&i.codigo].join(" "));
+      return txt.includes(q) || (qd.length>=3 && digitos(d.tel).includes(qd));
+    }).sort((a,b)=>(b.recebido||"").localeCompare(a.recebido||"") || a.nome.localeCompare(b.nome,"pt-BR"));
+  }
+
+  function desenhar(){
+    const v=visiveis();
+    $("tLista").textContent="Documentações ("+v.length+(v.length!==dados.documentos.length?" de "+dados.documentos.length:"")+")";
+    if(!v.length){ $("lista").innerHTML='<p class="mut">'+(dados.documentos.length?"Nada encontrado com esse filtro.":"Nenhuma documentação cadastrada ainda.")+'</p>'; return; }
+    $("lista").innerHTML=v.map(d=>{
+      const i=acharImovel(d.imovel), pz=prazo(d);
+      const ref=d.imovel
+        ? (i ? `<a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.titulo)}</a><span class="mut"> · ${esc(i.endereco||"")} · cód. ${esc(i.codigo)}</span>`
+             : /^https?:\/\//.test(d.imovel) ? `<a href="${esc(d.imovel)}" target="_blank" rel="noopener">${esc(d.imovel)}</a>` : esc(d.imovel))
+        : '<span class="mut">Sem imóvel vinculado</span>';
+      const wa=digitos(d.tel);
+      return `<div class="doc ${pz}" data-id="${d.id}">
+        <h3>${esc(d.nome)} <span class="mut">· ${wa?`<a href="https://wa.me/${wa.length<=11?"55"+wa:wa}" target="_blank" rel="noopener">${esc(d.tel)}</a>`:esc(d.tel)}</span>
+          <span class="tag ${d.situacao}">${SITUACOES[d.situacao]||""}</span>${pz?`<span class="tag ${pz}">${pz==="venc"?"Vencida":"Vence em breve"}</span>`:""}</h3>
+        <div class="imo">🏠 ${ref}</div>
+        <div class="mut">${d.recebido?"Recebida em "+dataBR(d.recebido):""}${d.recebido&&d.validade?" · ":""}${d.validade?"Válida até "+dataBR(d.validade):""}</div>
+        <div>${(d.docs||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</div>
+        ${d.local?`<div class="mut">📁 ${esc(d.local)}</div>`:""}
+        ${d.obs?`<div class="mut">📝 ${esc(d.obs)}</div>`:""}
+        <div class="acoes"><button class="peq" data-a="ed">Editar</button><button class="peq" data-a="del">Excluir</button></div>
+      </div>`;
+    }).join("");
+  }
+
+  // ---------- formulário ----------
+  $("docs").innerHTML=TIPOS_DOC.map(t=>`<label><input type="checkbox" value="${esc(t)}"> ${esc(t)}</label>`).join("");
+  const marcados = () => [...$("docs").querySelectorAll("input:checked")].map(x=>x.value);
+  function limpar(){
+    editando=null; $("form").reset(); previa();
+    $("tForm").textContent="Nova documentação"; $("btnSalvar").textContent="Salvar documentação"; $("btnCancelar").style.display="none";
+  }
+  $("imovel").addEventListener("input",previa);
+  $("form").addEventListener("submit",e=>{
+    e.preventDefault();
+    const d={nome:$("nome").value.trim(), tel:$("tel").value.trim(), imovel:$("imovel").value.trim(), situacao:$("sit").value,
+             recebido:$("recebido").value, validade:$("validade").value, docs:marcados(), local:$("local").value.trim(), obs:$("obs").value.trim()};
+    if(!d.nome||!d.tel) return;
+    if(d.recebido&&d.validade&&d.validade<d.recebido){ toast("Validade anterior ao recebimento"); return; }
+    if(editando) Object.assign(dados.documentos.find(x=>x.id===editando),d);
+    else dados.documentos.push(Object.assign({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6)},d));
+    salvar(); limpar(); desenhar(); toast("Documentação salva");
+  });
+  $("btnCancelar").onclick=limpar;
+
+  $("lista").addEventListener("click",e=>{
+    const b=e.target.closest("button[data-a]"); if(!b) return;
+    const d=dados.documentos.find(x=>x.id===b.closest(".doc").dataset.id); if(!d) return;
+    if(b.dataset.a==="del" && confirm("Excluir a documentação de "+d.nome+"?")){ dados.documentos=dados.documentos.filter(x=>x!==d); salvar(); desenhar(); }
+    if(b.dataset.a==="ed"){
+      editando=d.id; $("nome").value=d.nome; $("tel").value=d.tel||""; $("imovel").value=d.imovel||""; $("sit").value=d.situacao||"analise";
+      $("recebido").value=d.recebido||""; $("validade").value=d.validade||""; $("local").value=d.local||""; $("obs").value=d.obs||"";
+      $("docs").querySelectorAll("input").forEach(x=>x.checked=(d.docs||[]).includes(x.value));
+      previa();
+      $("tForm").textContent="Editando: "+d.nome; $("btnSalvar").textContent="Salvar alterações"; $("btnCancelar").style.display="";
+      $("boxForm").scrollIntoView({behavior:"smooth"});
+    }
+  });
+  $("busca").addEventListener("input",desenhar);
+  $("fsit").addEventListener("change",desenhar);
+
+  // ---------- backup ----------
+  $("btnExp").onclick=()=>{
+    const blob=new Blob([JSON.stringify(dados,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="documentacoes-backup-"+hoje()+".json"; a.click(); URL.revokeObjectURL(a.href);
+  };
+  $("btnImp").onclick=()=>$("arq").click();
+  $("arq").onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const d=JSON.parse(r.result); if(!d||!Array.isArray(d.documentos)) throw 0;
+        if(!confirm("Substituir os registros atuais ("+dados.documentos.length+") pelos do backup ("+d.documentos.length+")?")) return;
+        dados=d; salvar(); desenhar(); toast("Backup importado");
+      }catch(_){ toast("Arquivo de backup inválido"); }
+    };
+    r.readAsText(f); e.target.value="";
+  };
+
+  // ---------- início ----------
+  function iniciar(d){
+    IMOVEIS=(d&&d.imoveis||[]).filter(i=>i.status!=="removido");
+    const a=(d&&d.atualizado_em)||"";
+    $("atu").textContent = a ? "Imóveis atualizados em "+a.slice(8,10)+"/"+a.slice(5,7)+"/"+a.slice(0,4) : "";
+    carregar(); desenhar(); previa();
+  }
+  // sem a lista de imóveis a tela ainda funciona: o vínculo vira só uma referência
+  if(window.IMOVEIS_DATA) iniciar(window.IMOVEIS_DATA);
+  else fetch("imoveis.json").then(r=>r.json()).then(iniciar).catch(()=>iniciar(null));
+})();
+</script>
+</body>
+</html>
